@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: conductor
+spec:
+  containers:
+    - name: conductor
+      image: conductor
+      imagePullPolicy: Never
+      resources:
+        requests:
+          memory: "200Mi"
+        limits:
+          memory: "500Mi"
