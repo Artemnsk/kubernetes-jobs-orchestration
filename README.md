@@ -14,3 +14,5 @@ A bunch of samples on how to orchestrate kubernetes jobs.
 > $ cd ..
 >
 > $ kubectl create -f pod-conductor.yaml
+>
+> $ kubectl port-forward conductor 8080:8081
