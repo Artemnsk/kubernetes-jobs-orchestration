@@ -4,23 +4,25 @@ kc.loadFromDefault()
 
 const k8sBatchApi = kc.makeApiClient(k8s.BatchV1Api)
 
-function jobFactory() {
-    const param = `${Date.now()}`.slice(-5)
-
+function jobFactory(liveEventId) {
     const job = new k8s.V1Job()
     job.apiVersion = 'batch/v1'
     job.kind = 'Job'
 
     const metadata = new k8s.V1ObjectMeta()
-    // TODO: embed params into the name.
-    metadata.name = 'simple-job-' + param
+    metadata.name = 'simple-job-' + liveEventId
     job.metadata = metadata
-    // TODO: pass some params in env variables.
+
+    // Pass parameters via env variables into the container.
+    const containerEnv = new k8s.V1EnvVar()
+    containerEnv.name = 'LIVE_EVENT_ID'
+    containerEnv.value = liveEventId
 
     const container = new k8s.V1Container()
     container.name = 'simple-job'
     container.image = 'simple-job'
     container.imagePullPolicy = 'Never'
+    container.env = [containerEnv]
 
     const podSpec = new k8s.V1PodSpec()
     podSpec.containers = [container]
@@ -38,7 +40,14 @@ function jobFactory() {
 }
 
 function simpleJob(req, res) {
-    k8sBatchApi.createNamespacedJob('default', jobFactory())
+    const liveEventId = req.query.liveEventId
+    if (!liveEventId) {
+        res.status(404)
+        res.send('"liveEventId" parameter is required')
+        return
+    }
+
+    k8sBatchApi.createNamespacedJob('default', jobFactory(liveEventId))
         .then((response) => {
             res.status(200)
             res.json(response)

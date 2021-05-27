@@ -3,9 +3,9 @@ function simpleJob() {
 }
 
 simpleJob().then(() => {
-    console.log('Job is done')
+    console.log(`Job for live event ${process.env.LIVE_EVENT_ID} is done.`)
     process.exit(0)
 }, (e) => {
-    console.error('Some error occurred: ', e)
+    console.error(`Job for live event ${process.env.LIVE_EVENT_ID} has error: `, e)
     process.exit(1)
 })

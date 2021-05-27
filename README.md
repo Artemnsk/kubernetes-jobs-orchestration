@@ -29,6 +29,13 @@ A bunch of samples on how to orchestrate kubernetes jobs.
 
 #### Create a simple job
 
-Make GET request to `127.0.0.1:8080/simple-job` to have k8s job created.
+Make GET request to `127.0.0.1:8080/simple-job?liveEventId=<ID>` to have k8s job created.
 You can track job via `$ kubectl get jobs` and status of corresponding
 containers via `$ kubectl get pods`.
+
+Then you can check this job's pod logs and ensure that environment variable has been passed:
+> $ kubectl logs simple-job-\<ID>-\<HASH>
+> 
+> \# \<...>
+>
+> \# Job for live event \<ID> is done.
