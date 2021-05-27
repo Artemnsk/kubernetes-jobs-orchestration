@@ -39,3 +39,16 @@ that environment variable has been passed fine:
 > \# \<...>
 >
 > \# Job with foo=\<FOO> is done.
+
+You can also check logs of conductor itself. Once it successfully creates a job, it starts watching
+for this particular job changes. Then, once at least one of job's containers succeeded, we aborting
+the watcher. Example:
+> \# GET 127.0.0.1:8080/simple-job?foo=foo-15
+>
+> $ kubectl logs conductor
+>
+> \# Job "simple-job-my-foo-15" status responded by watcher:  { startTime: '2021-05-27T10:39:28Z', active: 1 }
+> 
+> \# Job "simple-job-my-foo-15" status responded by watcher:  { \<...> succeeded: 1 }
+>
+> \# Watching is over gracefully. 

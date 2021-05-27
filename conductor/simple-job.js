@@ -3,6 +3,7 @@ const kc = new k8s.KubeConfig()
 kc.loadFromDefault()
 
 const k8sBatchApi = kc.makeApiClient(k8s.BatchV1Api)
+const watch = new k8s.Watch(kc)
 
 function jobFactory(foo) {
     const job = new k8s.V1Job()
@@ -57,8 +58,57 @@ function simpleJob(req, res) {
 
     k8sBatchApi.createNamespacedJob('default', jobFactory(foo))
         .then((response) => {
-            res.status(200)
-            res.json(response)
+            let text = `<h3>${Date.now()}: Job has been created.</h3>`
+            text += `
+                <b>Job details:</b>
+                <ul><li>${JSON.stringify(response)}</li></ul>
+            `
+
+            const jobName = response.body.metadata.name
+            // Resource version is needed to filter out old notifications.
+            const resourceVersion = response.body.metadata.resourceVersion
+            const namespace = 'default'
+            // Start watching for changes.
+            let watchRequest
+            let watchRequestAborted = false
+            // TODO: we may want to use "bookmark"s to ensure we missed no changes in between, or what?
+            //  see https://kubernetes.io/docs/reference/using-api/api-concepts/#watch-bookmarks
+            return watch.watch(
+                `/apis/batch/v1/namespaces/${namespace}/jobs`,
+                { resourceVersion },
+                (type, job) => {
+                    // Apparently, types can be ADDED, DELETED, MODIFIED, BOOKMARK, ERROR.
+                    // TODO: I couldn't find this info in docs! Also, we may want to handle ERROR and DELETED.
+                    switch (type) {
+                        case 'MODIFIED':
+                            if (job.metadata.name === jobName) {
+                                // Notice that we can not compare resourceVersions to know the change time.
+                                // See https://kubernetes.io/docs/reference/using-api/api-concepts/#resource-versions.
+                                console.log(`Job "${jobName}" status responded by watcher: `, job.status)
+                                // Job Status definition.
+                                // https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/job-v1/#JobStatus
+                                // TODO: we may also want to stop watching if amount of fails reaches limit.
+                                if (job.status.succeeded > 0) {
+                                    // Stop watching for changes.
+                                    watchRequestAborted = true
+                                    watchRequest.abort()
+                                }
+                            }
+                            break
+                    }
+                },
+                (err) => {
+                    if (err && !watchRequestAborted) {
+                        console.log('Watching is over with error: ', err)
+                        return
+                    }
+                    console.log('Watching is over gracefully.')
+                },
+            ).then(respondedWatchRequest => {
+                watchRequest = respondedWatchRequest
+                res.status(200)
+                res.send(text)
+            })
         })
         .catch((e) => {
             res.status(500)
