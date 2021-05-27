@@ -18,11 +18,19 @@ function jobFactory(liveEventId) {
     containerEnv.name = 'LIVE_EVENT_ID'
     containerEnv.value = liveEventId
 
+    // It is something that can vary.
+    const containerResReqs = new k8s.V1ResourceRequirements()
+    containerResReqs.limits = {
+        memory: '64Mi',
+        cpu: '100m',
+    }
+
     const container = new k8s.V1Container()
     container.name = 'simple-job'
     container.image = 'simple-job'
     container.imagePullPolicy = 'Never'
     container.env = [containerEnv]
+    container.resources = containerResReqs
 
     const podSpec = new k8s.V1PodSpec()
     podSpec.containers = [container]
