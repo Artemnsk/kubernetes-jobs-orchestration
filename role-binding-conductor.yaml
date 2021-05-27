@@ -1,0 +1,16 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: role-binding-conductor
+  namespace: default
+subjects:
+  # We can specify more than one "subject" actually.
+  # TODO: we may want to create a standalone ServiceAccount for rtms jobs "manager".
+  - kind: ServiceAccount
+    name: default
+    namespace: default
+roleRef:
+  # "roleRef" specifies the binding to a Role / ClusterRole.
+  kind: Role # This must be Role or ClusterRole.
+  name: jobs-conductor # This must match the name of the Role or ClusterRole you wish to bind to.
+  apiGroup: rbac.authorization.k8s.io
