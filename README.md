@@ -29,13 +29,13 @@ A bunch of samples on how to orchestrate kubernetes jobs.
 
 #### Create a simple job
 
-Make GET request to `127.0.0.1:8080/simple-job?liveEventId=<ID>` to have k8s job created.
-You can track job via `$ kubectl get jobs` and status of corresponding
-containers via `$ kubectl get pods`.
+**Route:** `GET 127.0.0.1:8080/simple-job?foo=<FOO>`
 
-Then you can check this job's pod logs and ensure that environment variable has been passed:
-> $ kubectl logs simple-job-\<ID>-\<HASH>
+Where `foo` is just some hypothetical parameter. Behind the scenes, k8s job will be created and
+this parameter will be passed to it. You can check this job's pod logs and ensure
+that environment variable has been passed fine:
+> $ kubectl logs simple-job-\<FOO>-\<HASH>
 > 
 > \# \<...>
 >
-> \# Job for live event \<ID> is done.
+> \# Job with foo=\<FOO> is done.
