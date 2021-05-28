@@ -3,6 +3,9 @@ function simpleJob() {
 }
 
 simpleJob().then(() => {
+    if (process.env.FAIL) {
+        throw new Error('job failed as requested in "fail" parameter')
+    }
     console.log(`Job with foo="${process.env.FOO}" is done.`)
     process.exit(0)
 }, (e) => {

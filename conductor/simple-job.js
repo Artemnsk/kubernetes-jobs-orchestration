@@ -5,7 +5,10 @@ kc.loadFromDefault()
 const k8sBatchApi = kc.makeApiClient(k8s.BatchV1Api)
 const watch = new k8s.Watch(kc)
 
-function jobFactory(foo) {
+// Retry times before marking the job failed.
+const BACKOFF_LIMIT = 3
+
+function jobFactory(foo, fail) {
     const job = new k8s.V1Job()
     job.apiVersion = 'batch/v1'
     job.kind = 'Job'
@@ -15,9 +18,12 @@ function jobFactory(foo) {
     job.metadata = metadata
 
     // Pass parameters via env variables into the container.
-    const containerEnv = new k8s.V1EnvVar()
-    containerEnv.name = 'FOO'
-    containerEnv.value = foo
+    const containerEnvFoo = new k8s.V1EnvVar()
+    containerEnvFoo.name = 'FOO'
+    containerEnvFoo.value = foo
+    const containerEnvFail = new k8s.V1EnvVar()
+    containerEnvFail.name = 'FAIL'
+    containerEnvFail.value = fail
 
     // It is something that can vary.
     const containerResReqs = new k8s.V1ResourceRequirements()
@@ -30,7 +36,7 @@ function jobFactory(foo) {
     container.name = 'simple-job'
     container.image = 'simple-job'
     container.imagePullPolicy = 'Never'
-    container.env = [containerEnv]
+    container.env = [containerEnvFoo, containerEnvFail]
     container.resources = containerResReqs
 
     const podSpec = new k8s.V1PodSpec()
@@ -42,6 +48,7 @@ function jobFactory(foo) {
 
     const jobSpec = new k8s.V1JobSpec()
     jobSpec.template = template
+    jobSpec.backoffLimit = BACKOFF_LIMIT
 
     job.spec = jobSpec
 
@@ -56,7 +63,8 @@ function simpleJob(req, res) {
         return
     }
 
-    k8sBatchApi.createNamespacedJob('default', jobFactory(foo))
+    const fail = req.query.fail
+    k8sBatchApi.createNamespacedJob('default', jobFactory(foo, fail))
         .then((response) => {
             let text = `<h3>${Date.now()}: Job has been created.</h3>`
             text += `
@@ -87,8 +95,18 @@ function simpleJob(req, res) {
                                 console.log(`Job "${jobName}" status responded by watcher: `, job.status)
                                 // Job Status definition.
                                 // https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/job-v1/#JobStatus
-                                // TODO: we may also want to stop watching if amount of fails reaches limit.
-                                if (job.status.succeeded > 0) {
+                                // NB! Sometimes Job can be executed 1 more time than BACKOFF_LIMIT. I had a run with
+                                // 3 failed pods and with 4. So it is better to check `conditions`
+                                // to determine the current job status.
+                                const lastCondition = (job.status.conditions || []).reduce((acc, i) => {
+                                    // If transition is done only.
+                                    if (i.status !== 'True') {
+                                        return acc
+                                    }
+                                    return acc && acc.lastTransitionTime > i.lastTransitionTime ? acc : i
+                                }, undefined)
+                                const isOver = lastCondition && ['Failed', 'Complete'].includes(lastCondition.type)
+                                if (isOver) {
                                     // Stop watching for changes.
                                     watchRequestAborted = true
                                     watchRequest.abort()
