@@ -11,11 +11,13 @@ A bunch of samples on how to orchestrate kubernetes jobs.
 >
 > $ docker build -t conductor .
 >
-> $ cd ..
->
-> $ cd simple-job
+> $ cd ../simple-job
 >
 > $ docker build -t simple-job .
+>
+> $ cd ../memory-job
+>
+> $ docker build -t memory-job .
 >
 > $ cd ..
 >
@@ -39,7 +41,7 @@ that environment variable has been passed fine:
 > 
 > \# \<...>
 >
-> \# Job with foo=\<FOO> is done.
+> \# Simple Job with foo=\<FOO> is done.
 
 - `fail` is an optional parameter: pass just anything that will be treated as `true` to make
 job fail every time. Such way you can see how failed job behaves.
@@ -107,3 +109,13 @@ In the examples above it is crucial to check `status.conditions` of the Job
 because even number of failed pods can be slightly different from the
 `BACKOFF_LIMIT` (during different experiments with `BACKOFF_LIMIT = 3`
 I had 3 and 4 failed pods until Job has finally got "Failed" status).
+
+#### Create a "memory" job
+
+**Route:** `GET 127.0.0.1:8080/memory-job?foo=<FOO>&bytes=<FAIL>`
+
+Where 
+- `foo` is needed to distinguish jobs.
+- `bytes` is the amount of memory to use in the container.
+
+**TBD.**
