@@ -72,6 +72,7 @@ the watcher.
     }
 ]
 ```
+
 ##### Example 2
 > \# GET 127.0.0.1:8080/simple-job?foo=foo-15&fail=1 (with BACKOFF_LIMIT = 3)
 >
@@ -112,10 +113,44 @@ I had 3 and 4 failed pods until Job has finally got "Failed" status).
 
 #### Create a "memory" job
 
-**Route:** `GET 127.0.0.1:8080/memory-job?foo=<FOO>&bytes=<FAIL>`
+**Route:** `GET 127.0.0.1:8080/memory-job?foo=<FOO>&reqBytes=<REQ_BYTES>&limBytes=<LIM_BYTES>&allocBytes=<ALLOC_BYTES>`
 
 Where 
 - `foo` is needed to distinguish jobs.
-- `bytes` is the amount of memory to use in the container.
+- `reqBytes` is the amount of memory to request for Job container.
+- `limBytes` is the amount of memory to use as limit for Job container.
+- `allocBytes` is the amount of memory to allocate in the "memory" job.
 
-**TBD.**
+##### Example 1
+> \# GET http://127.0.0.1:8080/memory-job?foo=bar3&reqBytes=50000000&limBytes=60000000&allocBytes=80000000
+>
+> $ kubectl logs conductor
+> 
+> \# { active: 1 }
+>
+> \# { active: 1, failed: 1 }
+>
+> \# { active: 1, failed: 2 }
+>
+> \# { active: 1, failed: 3 }
+>
+> \# { active: 1, failed: 4 }
+>
+> $ kubectl get pods
+```
+NAME                    READY   STATUS      RESTARTS   AGE
+conductor               1/1     Running     0          11m
+memory-job-bar4-246dg   0/1     OOMKilled   0          66s
+memory-job-bar4-9cpf2   0/1     OOMKilled   0          46s
+memory-job-bar4-nxmr4   0/1     OOMKilled   0          89s
+memory-job-bar4-stz8w   0/1     OOMKilled   0          102s
+```
+##### Example 2
+> \# GET http://127.0.0.1:8080/memory-job?foo=bar3&reqBytes=50000000&limBytes=150000000&allocBytes=80000000
+>
+> $ kubectl logs conductor
+> 
+> \# { active: 1 }
+>
+> \# { succeeded: 1 }
+

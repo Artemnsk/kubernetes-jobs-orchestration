@@ -1,12 +1,13 @@
 async function memoryJob() {
-    const bytes = parseInt(process.env.BYTES, 10)
-    if (typeof bytes !== 'number' || isNaN(bytes)) {
-        throw new Error('Invalid BYTES parameter')
+    const allocBytes = parseInt(process.env.ALLOC_BYTES, 10)
+    if (typeof allocBytes !== 'number' || isNaN(allocBytes)) {
+        throw new Error('Invalid ALLOC_BYTES parameter')
     }
 
-    await new Promise(r => setTimeout(r, 15_000))
+    await new Promise(r => setTimeout(r, 7_000))
     // If memory is not enough, this place is supposed to throw OOM error.
-    Buffer.alloc(bytes)
+    Buffer.alloc(allocBytes, 'a')
+    await new Promise(r => setTimeout(r, 8_000))
 }
 
 memoryJob().then(() => {

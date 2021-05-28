@@ -8,7 +8,7 @@ const watch = new k8s.Watch(kc)
 // Retry times before marking the job failed.
 const BACKOFF_LIMIT = 3
 
-function jobFactory(name, envVars) {
+function jobFactory(name, image, envVars, containerResReqs) {
     const job = new k8s.V1Job()
     job.apiVersion = 'batch/v1'
     job.kind = 'Job'
@@ -17,16 +17,18 @@ function jobFactory(name, envVars) {
     metadata.name = name
     job.metadata = metadata
 
-    // It is something that can vary.
-    const containerResReqs = new k8s.V1ResourceRequirements()
-    containerResReqs.limits = {
-        memory: '64Mi',
-        cpu: '100m',
+    // Use default values if nothing is being passed.
+    if (!containerResReqs) {
+        containerResReqs = new k8s.V1ResourceRequirements()
+        containerResReqs.limits = {
+            memory: '64Mi',
+            cpu: '100m',
+        }
     }
 
     const container = new k8s.V1Container()
-    container.name = 'simple-job'
-    container.image = 'simple-job'
+    container.name = image
+    container.image = image
     container.imagePullPolicy = 'Never'
     // Pass parameters via env variables into the container.
     container.env = Object.entries(envVars).map(([key, value]) => {
@@ -53,8 +55,8 @@ function jobFactory(name, envVars) {
     return job
 }
 
-function createAndWatch(name, envVariables) {
-    return k8sBatchApi.createNamespacedJob('default', jobFactory(name, envVariables))
+function createAndWatch(name, image, envVariables, containerResReqs) {
+    return k8sBatchApi.createNamespacedJob('default', jobFactory(name, image, envVariables, containerResReqs))
         .then((response) => {
             let text = `<h3>${Date.now()}: Job has been created.</h3>`
             text += `

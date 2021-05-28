@@ -10,11 +10,12 @@ function simpleJob(req, res) {
 
     const fail = req.query.fail
     const name = 'simple-job-' + foo
+    const image = 'simple-job'
     const envVars = { FOO: foo }
     if (fail) {
         envVars.FAIL = fail
     }
-    createAndWatch(name, envVars)
+    createAndWatch(name, image, envVars)
         .then(text => {
             res.status(200)
             res.send(text)
