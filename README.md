@@ -2,7 +2,7 @@
 A bunch of samples on how to orchestrate kubernetes jobs.
 
 ### Usage
-
+// TODO: execute with the gulp. :grimacing:
 > $ minikube start
 >
 > $ eval $(minikube docker-env)
@@ -60,7 +60,7 @@ the watcher.
 > \# Watching is over gracefully.
 >
 `CONDITIONS:`
-```json
+```js
 [
     {
         type: 'Complete',
@@ -88,7 +88,7 @@ the watcher.
 > \# Watching is over gracefully.
 >
 `CONDITIONS:`
-```json
+```js
 [
     {
         type: 'Failed',
